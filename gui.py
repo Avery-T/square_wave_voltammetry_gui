@@ -4,14 +4,17 @@ from potentiostat import Potentiostat
 import matplotlib.pyplot as plt
 import numpy as np
 
+Test_Number = 0 
+
 def run_test():
-		# get user input
+		global Test_Number
+		# Get user input for test parameters
 		try:
 				port = port_entry.get()
-				datafile = filedialog.asksaveasfilename(title="Save Test Data")
-				if not datafile:
-						messagebox.showerror("Error", "No file selected for saving data.")
-						return
+			#	datafile = filedialog.asksaveasfilename(title="Save Test Data")
+			#	if not datafile:
+			#			messagebox.showerror("Error", "No file selected for saving data.")
+			#			return
 
 				test_name = 'squareWave'
 				curr_range = curr_range_var.get()
@@ -27,21 +30,31 @@ def run_test():
 						'window': float(window_entry.get()),
 				}
 
-				#  potentiostat object and parameters
+				# Create potentiostat object and set parameters
 				dev = Potentiostat(port)
 				dev.set_curr_range(curr_range)
 				dev.set_sample_rate(sample_rate)
 				dev.set_param(test_name, test_param)
 
-				
+				# Run the test
 
-				# lists to store data from multiple runs
+				# increment the Test number 
+				Test_Number = Test_Number + 1
+				
+				# Initialize lists to store data from multiple runs
 				all_t = []
 				all_volt = []
 				all_curr = []
-			  
-				for key, value in test_param.items():
-						print(f"{key}: {value}")
+				 
+				datafile = "electrode" + str(electrode_entry.get()) + "_" + str(test_type_entry.get()) + "_" +"test"+ str( int(test_num_entry.get()) + Test_Number)
+
+				param_text_name = datafile + ".txt" 
+
+				with open(param_text_name, 'w') as file:
+
+					for key, value in test_param.items():
+							file.write(f"{key}:{value}\n") 
+							print(f"{key}: {value}")
 
 				num_runs = int(average_entry.get())
 
@@ -56,21 +69,21 @@ def run_test():
 				all_volt = np.array(all_volt)
 				all_curr = np.array(all_curr)
 
-				# calc avgs 
+				# Calculate averages
 				avg_t = np.mean(all_t, axis=0)
 				avg_volt = np.mean(all_volt, axis=0)
 				avg_curr = np.mean(all_curr, axis=0)
 				
 				csv_data = np.column_stack((avg_t,avg_volt,avg_curr)) 
 
-				
+				# Save Data to a CSV file 
 				csv_filename = datafile + ".csv"
 				np.savetxt(csv_filename, csv_data, delimiter=",",header="time,volts,current",comments="",fmt="%f")
  				
 
 				data_file = datafile + ".png" 	
 
-				# plot the avgd results
+				# Plot averaged results
 				plt.figure(1)
 				plt.subplot(211)
 				plt.plot(avg_t, avg_volt)
@@ -101,14 +114,17 @@ def run_test():
 		except Exception as e:
 				messagebox.showerror("Error", f"An error occurred: {e}")
 
-
+# Create the main tkinter window
 root = tk.Tk()
 root.title("Rodeostat Square Wave Voltammetry")
 
-# default parameters 
+# Default parameters 
 default_params = {
 		'port': '/dev/ttyACM0',
 		'curr_range': '100uA',
+		'electrode':0,  
+    'test_num':0, 
+		'test_type': 'buffer', 
 		'sample_rate': 100.0,
 		'quietValue': 0,
 		'qietTime': 0,
@@ -121,8 +137,8 @@ default_params = {
 }
 
 
-# input fields
-fields = ["Port", "Current Range", "Sample Rate", "Quiet Value", "Quiet Time", "Amplitude", "Start Value", "Final Value", "Step Value", "Window","Average Amount"] 
+# Create input fields
+fields = ["Port","Electrode","Test Number", "Test Type", "Current Range", "Sample Rate", "Quiet Value", "Quiet Time", "Amplitude", "Start Value", "Final Value", "Step Value", "Window","Average Amount"] 
 entries = {}
 
 port_entry = tk.Entry(root, width=30)
@@ -131,6 +147,20 @@ entries['Port'] = port_entry
 
 curr_range_var = tk.StringVar(value=default_params['curr_range'])
 curr_range_menu = tk.OptionMenu(root, curr_range_var, "100uA", "1mA", "10mA")
+
+electrode_entry = tk.Entry(root, width=30)
+electrode_entry.insert(0, default_params['electrode'])
+entries['Electrode'] = electrode_entry 
+
+test_num_entry = tk.Entry(root, width=30)
+test_num_entry.insert(0, default_params['test_num'])
+entries['Test Number'] = test_num_entry 
+
+test_type_entry = tk.Entry(root, width=30)
+test_type_entry.insert(0, default_params['test_type'])
+entries['Test Type'] = test_type_entry 
+
+
 
 sample_rate_entry = tk.Entry(root, width=30)
 sample_rate_entry.insert(0, default_params['sample_rate'])
@@ -165,11 +195,11 @@ window_entry.insert(0, default_params['window'])
 entries['Window'] = window_entry
 
 average_entry = tk.Entry(root, width=30)
-amplitude_entry.insert(0, default_params['avg_amount'])
+average_entry.insert(0, default_params['avg_amount'])
 entries['Average Amount'] = average_entry
 
 
-# arrange fields in the window
+# Arrange fields in the window
 
 tk.Label(root, text="Port").grid(row=0, column=0, padx=5, pady=5)
 port_entry.grid(row=0, column=1, padx=5, pady=5)
@@ -177,35 +207,48 @@ port_entry.grid(row=0, column=1, padx=5, pady=5)
 tk.Label(root, text="Current Range").grid(row=1, column=0, padx=5, pady=5)
 curr_range_menu.grid(row=1, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Sample Rate").grid(row=2, column=0, padx=5, pady=5)
-sample_rate_entry.grid(row=2, column=1, padx=5, pady=5)
+tk.Label(root, text="Electrode").grid(row=2, column=0, padx=5, pady=5)
+electrode_entry.grid(row=2, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Quiet Value").grid(row=3, column=0, padx=5, pady=5)
-quiet_value_entry.grid(row=3, column=1, padx=5, pady=5)
+tk.Label(root, text="Test Number").grid(row=3, column=0, padx=5, pady=5)
+test_num_entry.grid(row=3, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Quiet Time").grid(row=4, column=0, padx=5, pady=5)
-quiet_time_entry.grid(row=4, column=1, padx=5, pady=5)
+tk.Label(root, text="Test Type").grid(row=4, column=0, padx=5, pady=5)
+test_type_entry.grid(row=4, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Amplitude").grid(row=5, column=0, padx=5, pady=5)
-amplitude_entry.grid(row=5, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Start Value").grid(row=6, column=0, padx=5, pady=5)
-start_value_entry.grid(row=6, column=1, padx=5, pady=5)
+tk.Label(root, text="Sample Rate").grid(row=5, column=0, padx=5, pady=5)
+sample_rate_entry.grid(row=5, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Final Value").grid(row=7, column=0, padx=5, pady=5)
-final_value_entry.grid(row=7, column=1, padx=5, pady=5)
+tk.Label(root, text="Quiet Value").grid(row=6, column=0, padx=5, pady=5)
+quiet_value_entry.grid(row=6, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Step Value").grid(row=8, column=0, padx=5, pady=5)
-step_value_entry.grid(row=8, column=1, padx=5, pady=5)
+tk.Label(root, text="Quiet Time").grid(row=7, column=0, padx=5, pady=5)
+quiet_time_entry.grid(row=7, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Window").grid(row=9, column=0, padx=5, pady=5)
-window_entry.grid(row=9, column=1, padx=5, pady=5)
+tk.Label(root, text="Amplitude").grid(row=8, column=0, padx=5, pady=5)
+amplitude_entry.grid(row=8, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Averaging Amount").grid(row=10, column=0, padx=5, pady=5)
-average_entry.grid(row=10, column=1, padx=5, pady=5)
+tk.Label(root, text="Start Value").grid(row=9, column=0, padx=5, pady=5)
+start_value_entry.grid(row=9, column=1, padx=5, pady=5)
 
+tk.Label(root, text="Final Value").grid(row=10, column=0, padx=5, pady=5)
+final_value_entry.grid(row=10, column=1, padx=5, pady=5)
+
+tk.Label(root, text="Step Value").grid(row=11, column=0, padx=5, pady=5)
+step_value_entry.grid(row=11, column=1, padx=5, pady=5)
+
+tk.Label(root, text="Window").grid(row=12, column=0, padx=5, pady=5)
+window_entry.grid(row=12, column=1, padx=5, pady=5)
+
+tk.Label(root, text="Averaging Amount").grid(row=13, column=0, padx=5, pady=5)
+average_entry.grid(row=13, column=1, padx=5, pady=5)
+
+# Run button
 run_button = tk.Button(root, text="Run Test", command=run_test)
-run_button.grid(row=11, column=0, columnspan=2, pady=10)
+run_button.grid(row=14, column=0, columnspan=2, pady=10)
 
-
+# Start the Tkinter event loop
 root.mainloop()
+
+
