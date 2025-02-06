@@ -1,3 +1,4 @@
+import time
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from potentiostat import Potentiostat
@@ -29,97 +30,111 @@ def run_test():
                                                 'stepValue': float(step_value_entry.get()),
                                                 'window': float(window_entry.get()),
                                 }
-
+       
                                 # Create potentiostat object and set parameters
                                 dev = Potentiostat(port)
                                 dev.set_curr_range(curr_range)
                                 dev.set_sample_rate(sample_rate)
                                 dev.set_param(test_name, test_param)
 
-                                # Run the test
-                                # increment the Test number 
-                                Test_Number = Test_Number + 1
+                                # 6 tests per run 
+                                for  i in range(6): 
+                                        print(i) 
+                                        start_time = time.time() 
 
-                                # Initialize lists to store data from multiple runs
-                                all_t = []
-                                all_volt = []
-                                all_curr = []
+                                        # Run the test
+                                        # increment the Test number 
+                                        Test_Number = Test_Number + 1
+
+                                        # Initialize lists to store data from multiple runs
+                                        all_t = []
+                                        all_volt = []
+                                        all_curr = []
                                  
-                                datafile = "electrode" + str(electrode_entry.get()) + "_" + str(test_type_entry.get()) + "_" +"test"+ str( int(test_num_entry.get()) + Test_Number)
+                                        datafile = "electrode" + str(electrode_entry.get()) + "_" + str(test_type_entry.get()) + "_" +"test"+ str( int(test_num_entry.get()) + Test_Number)
 
-                                param_text_name = datafile + ".txt" 
+                                        param_text_name = datafile + ".txt" 
 
-                                with open(param_text_name, 'w') as file:
+                                        with open(param_text_name, 'w') as file:
 
-                                        for key, value in test_param.items():
+                                                for key, value in test_param.items():
                                                         file.write(f"{key}:{value}\n") 
                                                         print(f"{key}: {value}")
 
-                                num_runs = int(average_entry.get())
+                                        num_runs = int(average_entry.get())
+       
+                                        for k in range(num_runs): 
+                                                print(f"Run {i+1}")
+                                                t, volt, curr = dev.run_test(test_name, display='pbar', filename=None)
+                                                all_t.append(t)
+                                                all_volt.append(volt)
+                                                all_curr.append(curr)
 
-                                for i in range(num_runs): 
-                                        print(f"Run {i+1}")
-                                        t, volt, curr = dev.run_test(test_name, display='pbar', filename=None)
-                                        all_t.append(t)
-                                        all_volt.append(volt)
-                                        all_curr.append(curr)
+                                        all_t = np.array(all_t)
+                                        all_volt = np.array(all_volt)
+                                        all_curr = np.array(all_curr)
 
-                                all_t = np.array(all_t)
-                                all_volt = np.array(all_volt)
-                                all_curr = np.array(all_curr)
-
-                                # Calculate averages
-                                avg_t = np.mean(all_t, axis=0)
-                                avg_volt = np.mean(all_volt, axis=0)
-                                avg_curr = np.mean(all_curr, axis=0)
+                                        # Calculate averages
+                                        avg_t = np.mean(all_t, axis=0)
+                                        avg_volt = np.mean(all_volt, axis=0)
+                                        avg_curr = np.mean(all_curr, axis=0)
                          
-                                #get the time in buffer 
-                                minutes_in_buffer =  float(minutes_in_buffer_entry.get())
-                                # create array with the same size 
+                                        #get the time in buffer 
+                                        minutes_in_buffer =  float(minutes_in_buffer_entry.get())
+                                        # create array with the same size 
 
-                                minutes_in_buffer_array = np.zeros_like(avg_t) 
+                                        minutes_in_buffer_array = np.zeros_like(avg_t) 
 
-                                minutes_in_buffer_array[0] = minutes_in_buffer
+                                        minutes_in_buffer_array[0] = i * 2
+                                        print(minutes_in_buffer_array[0])
 
-                                csv_data = np.column_stack((avg_t,avg_volt,avg_curr,minutes_in_buffer_array)) 
+                                        csv_data = np.column_stack((avg_t,avg_volt,avg_curr,minutes_in_buffer_array)) 
 
-                                # Save Data to a CSV file 
-                                csv_filename = datafile + ".csv"
-                                np.savetxt(csv_filename, csv_data, delimiter=",",header="time,volts,current,minutes_in_buffer",comments="",fmt="%f")
- 
+                                        # Save Data to a CSV file 
+                                        csv_filename = datafile + ".csv"
+                                        np.savetxt(csv_filename, csv_data, delimiter=",",header="time,volts,current,minutes_in_buffer",comments="",fmt="%f")
 
-                                data_file = datafile + ".png" 
 
-                                # Plot averaged results
-                                plt.figure(1)
-                                plt.subplot(211)
-                                plt.plot(avg_t, avg_volt)
-                                plt.ylabel('potential (V)')
-                                plt.grid('on')
+                                        data_file = datafile + ".png"
 
-                                plt.subplot(212)
-                                plt.plot(avg_t, avg_curr)
-                                plt.ylabel('current (uA)')
-                                plt.xlabel('time (sec)')
-                                plt.grid('on')
+                                        # Plot averaged results
+                                        plt.figure(1)
+                                        plt.subplot(211)
+                                        plt.plot(avg_t, avg_volt)
+                                        plt.ylabel('potential (V)')
+                                        plt.grid('on')
+
+                                        plt.subplot(212)
+                                        plt.plot(avg_t, avg_curr)
+                                        plt.ylabel('current (uA)')
+                                        plt.xlabel('time (sec)')
+                                        plt.grid('on')
         
-                                      
-                                plt.savefig(data_file,dpi=600, bbox_inches='tight') 
-                                data_file = datafile + "_.png" 
-                                plt.figure(2)
-                                plt.plot(avg_volt, avg_curr)
-                                plt.xlabel('potential (V)')
-                                plt.ylabel('current (uA)')
-                                plt.grid('on')
-                                plt.savefig(data_file,dpi=600, bbox_inches='tight') 
-                                plt.show()
 
-                                messagebox.showinfo("Success", "Test completed and data saved.")
+                                        plt.savefig(data_file,dpi=600, bbox_inches='tight') 
+                                        data_file = datafile + "_.png"
+                                        plt.figure(2)
+                                        plt.plot(avg_volt, avg_curr)
+                                        plt.xlabel('potential (V)')
+                                        plt.ylabel('current (uA)')
+                                        plt.grid('on')
+                                        plt.savefig(data_file,dpi=600, bbox_inches='tight') 
+                                        #plt.show()
+
+                        #               messagebox.showinfo("Success", "Test completed and data saved.")
+                                        end_time = time.time()
+                                        print(end_time) 
+                                        print(start_time) 
+                                        sleep_time = 120 - (end_time -start_time) 
+                                        time.sleep(sleep_time) 
+
+
 
                 except Exception as e:
                                 messagebox.showerror("Error", f"An error occurred: {e}")
-
-# Create the main tkinter window
+                                end_time = time.time() 
+                                #2 minute intervals
+                                # Create the main tkinter window
 root = tk.Tk()
 root.title("Rodeostat Square Wave Voltammetry")
 
@@ -136,7 +151,7 @@ default_params = {
                 'stepValue': 0.001,
                 'window': 0.05,
                 'avg_amount': 1,
-        'electrode':0,  
+                'electrode':0,  
     'test_num':0, 
                 'test_type': 'buffer', 
                 'minutes_in_buffer': 0.0
@@ -260,7 +275,6 @@ run_button.grid(row=15, column=0, columnspan=2, pady=10)
 
 # Start the Tkinter event loop
 root.mainloop()
-
 
 
 # Start the Tkinter event loop
