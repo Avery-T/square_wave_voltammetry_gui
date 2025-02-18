@@ -1,4 +1,5 @@
 import time
+import os
 import tkinter as tk
 from tkinter import filedialog, messagebox
 from potentiostat import Potentiostat
@@ -6,6 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 Test_Number = 0 
+os.chdir("./data")
 
 def run_test():
                 global Test_Number
@@ -45,7 +47,7 @@ def run_test():
                                         # Run the test
                                         # increment the Test number 
                                         Test_Number = Test_Number + 1
-
+                                        #test_num_entry.insert(0, Test_Number) 
                                         # Initialize lists to store data from multiple runs
                                         all_t = []
                                         all_volt = []
@@ -126,7 +128,10 @@ def run_test():
                                         print(end_time) 
                                         print(start_time) 
                                         sleep_time = 120 - (end_time -start_time) 
-                                        time.sleep(sleep_time) 
+                                        # to block sleeping on the last iteration
+                                        if( i != 5):
+                                            time.sleep(sleep_time) 
+
 
 
 
@@ -145,11 +150,11 @@ default_params = {
                 'sample_rate': 100.0,
                 'quietValue': 0,
                 'qietTime': 0,
-                'amplitde': 0.05,
+                'amplitde': 0.025,
                 'startValue': -0.6,
                 'finalValue': 0,
                 'stepValue': 0.001,
-                'window': 0.05,
+                'window': 0.1,
                 'avg_amount': 1,
                 'electrode':0,  
     'test_num':0, 
@@ -233,7 +238,7 @@ curr_range_menu.grid(row=1, column=1, padx=5, pady=5)
 tk.Label(root, text="Electrode").grid(row=2, column=0, padx=5, pady=5)
 electrode_entry.grid(row=2, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Test Number").grid(row=3, column=0, padx=5, pady=5)
+tk.Label(root, text="Starting TestNumber").grid(row=3, column=0, padx=5, pady=5)
 test_num_entry.grid(row=3, column=1, padx=5, pady=5)
 
 tk.Label(root, text="Test Type").grid(row=4, column=0, padx=5, pady=5)
