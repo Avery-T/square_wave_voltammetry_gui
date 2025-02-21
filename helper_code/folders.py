@@ -29,7 +29,7 @@ def create_electrode_folder(electrode_name):
 
 def create_new_test_set_folder(test_type): 
 	number_of_folders =  sum(os.path.isdir(item) for item in os.listdir("."))
-	folder = "./Test_Set_" + str(number_of_folders) + test_type
+	folder = "./Test_Set_" + str(number_of_folders) "_" + test_type
 
 	if os.path.exists(folder) and os.path.isdir(folder):
 		print("Test set folder already exists")
