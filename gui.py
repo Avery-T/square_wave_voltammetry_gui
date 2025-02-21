@@ -5,161 +5,175 @@ from tkinter import filedialog, messagebox
 from potentiostat import Potentiostat
 import matplotlib.pyplot as plt
 import numpy as np
+from helper_code import folders 
 
 Test_Number = 0 
 os.chdir("./data")
-
+#start by creating month day folder 
+Top_Dir = folders.create_month_day_folder()
+os.chdir(Top_Dir) 
+Top_Dir = os.getcwd()
 def run_test():
-                global Test_Number
-                # Get user input for test parameters
-                try:
-                                port = port_entry.get()
-                        #       datafile = filedialog.asksaveasfilename(title="Save Test Data")
-                        #       if not datafile:
-                        #                       messagebox.showerror("Error", "No file selected for saving data.")
-                        #                       return
+								global Top_Dir
+								global Test_Number
+								os.chdir(Top_Dir ) # always start at the top directory to properly create folders and save files
+								# Get user input for test parameters
+								try:
+																port = port_entry.get()
+												#				datafile = filedialog.asksaveasfilename(title="Save Test Data")
+												#				if not datafile:
+												#												messagebox.showerror("Error", "No file selected for saving data.")
+												#												return
 
-                                test_name = 'squareWave'
-                                curr_range = curr_range_var.get()
-                                sample_rate = float(sample_rate_entry.get())
+																test_name = 'squareWave'
+																curr_range = curr_range_var.get()
+																sample_rate = float(sample_rate_entry.get())
 
-                                test_param = {
-                                                'quietValue': float(quiet_value_entry.get()),
-                                                'qietTime': float(quiet_time_entry.get()),
-                                                'amplitde': float(amplitude_entry.get()),
-                                                'startValue': float(start_value_entry.get()),
-                                                'finalValue': float(final_value_entry.get()),
-                                                'stepValue': float(step_value_entry.get()),
-                                                'window': float(window_entry.get()),
-                                }
-       
-                                # Create potentiostat object and set parameters
-                                dev = Potentiostat(port)
-                                dev.set_curr_range(curr_range)
-                                dev.set_sample_rate(sample_rate)
-                                dev.set_param(test_name, test_param)
+																test_param = {
+																								'quietValue': float(quiet_value_entry.get()),
+																								'qietTime': float(quiet_time_entry.get()),
+																								'amplitde': float(amplitude_entry.get()),
+																								'startValue': float(start_value_entry.get()),
+																								'finalValue': float(final_value_entry.get()),
+																								'stepValue': float(step_value_entry.get()),
+																								'window': float(window_entry.get()),
+																}
+			 
+																# Create potentiostat object and set parameters
+																dev = Potentiostat(port)
+																dev.set_curr_range(curr_range)
+																dev.set_sample_rate(sample_rate)
+																dev.set_param(test_name, test_param)
 
-                                # 6 tests per run 
-                                for  i in range(6): 
-                                        print(i) 
-                                        start_time = time.time() 
+																
+																electrode_name = "electrode" + str(electrode_entry.get())  
+																save_data_dir =  folders.create_electrode_folder(electrode_name) 
+																# will always try to change dir even if it doesnt need to  
+																os.chdir(save_data_dir)
+																print("got out of electrode")
+																test_type = str(test_type_entry.get())
+																save_data_dir = folders.create_new_test_set_folder(test_type) 
+																os.chdir(save_data_dir)		
+																
+																for  i in range(6): 
+																				print(i) 
+																				start_time = time.time() 
 
-                                        # Run the test
-                                        # increment the Test number 
-                                        Test_Number = Test_Number + 1
-                                        #test_num_entry.insert(0, Test_Number) 
-                                        # Initialize lists to store data from multiple runs
-                                        all_t = []
-                                        all_volt = []
-                                        all_curr = []
-                                 
-                                        datafile = "electrode" + str(electrode_entry.get()) + "_" + str(test_type_entry.get()) + "_" +"test"+ str( int(test_num_entry.get()) + Test_Number)
+																				# Run the test
+																				# increment the Test number 
+																				Test_Number = Test_Number + 1
+																				#test_num_entry.insert(0, Test_Number) 
+																				# Initialize lists to store data from multiple runs
+																				all_t = []
+																				all_volt = []
+																				all_curr = []
+																				datafile = electrode_name + "_" + test_type  + "_" +"test"+ str( int(test_num_entry.get()) + Test_Number)
 
-                                        param_text_name = datafile + ".txt" 
+																				param_text_name = datafile + ".txt" 
 
-                                        with open(param_text_name, 'w') as file:
+																				with open(param_text_name, 'w') as file:
 
-                                                for key, value in test_param.items():
-                                                        file.write(f"{key}:{value}\n") 
-                                                        print(f"{key}: {value}")
+																								for key, value in test_param.items():
+																												file.write(f"{key}:{value}\n") 
+																												print(f"{key}: {value}")
 
-                                        num_runs = int(average_entry.get())
-       
-                                        for k in range(num_runs): 
-                                                print(f"Run {i+1}")
-                                                t, volt, curr = dev.run_test(test_name, display='pbar', filename=None)
-                                                all_t.append(t)
-                                                all_volt.append(volt)
-                                                all_curr.append(curr)
+																				num_runs = int(average_entry.get())
+			 
+																				for k in range(num_runs): 
+																								print(f"Run {i+1}")
+																								t, volt, curr = dev.run_test(test_name, display='pbar', filename=None)
+																								all_t.append(t)
+																								all_volt.append(volt)
+																								all_curr.append(curr)
 
-                                        all_t = np.array(all_t)
-                                        all_volt = np.array(all_volt)
-                                        all_curr = np.array(all_curr)
+																				all_t = np.array(all_t)
+																				all_volt = np.array(all_volt)
+																				all_curr = np.array(all_curr)
 
-                                        # Calculate averages
-                                        avg_t = np.mean(all_t, axis=0)
-                                        avg_volt = np.mean(all_volt, axis=0)
-                                        avg_curr = np.mean(all_curr, axis=0)
-                         
-                                        #get the time in buffer 
-                                        minutes_in_buffer =  float(minutes_in_buffer_entry.get())
-                                        # create array with the same size 
+																				# Calculate averages
+																				avg_t = np.mean(all_t, axis=0)
+																				avg_volt = np.mean(all_volt, axis=0)
+																				avg_curr = np.mean(all_curr, axis=0)
+												 
+																				#get the time in buffer 
+																				minutes_in_buffer =  float(minutes_in_buffer_entry.get())
+																				# create array with the same size 
 
-                                        minutes_in_buffer_array = np.zeros_like(avg_t) 
+																				minutes_in_buffer_array = np.zeros_like(avg_t) 
 
-                                        minutes_in_buffer_array[0] = i * 2
-                                        print(minutes_in_buffer_array[0])
+																				minutes_in_buffer_array[0] = i * 2
+																				print(minutes_in_buffer_array[0])
 
-                                        csv_data = np.column_stack((avg_t,avg_volt,avg_curr,minutes_in_buffer_array)) 
+																				csv_data = np.column_stack((avg_t,avg_volt,avg_curr,minutes_in_buffer_array)) 
 
-                                        # Save Data to a CSV file 
-                                        csv_filename = datafile + ".csv"
-                                        np.savetxt(csv_filename, csv_data, delimiter=",",header="time,volts,current,minutes_in_buffer",comments="",fmt="%f")
-
-
-                                        data_file = datafile + ".png"
-
-                                        # Plot averaged results
-                                        plt.figure(1)
-                                        plt.subplot(211)
-                                        plt.plot(avg_t, avg_volt)
-                                        plt.ylabel('potential (V)')
-                                        plt.grid('on')
-
-                                        plt.subplot(212)
-                                        plt.plot(avg_t, avg_curr)
-                                        plt.ylabel('current (uA)')
-                                        plt.xlabel('time (sec)')
-                                        plt.grid('on')
-        
-
-                                        plt.savefig(data_file,dpi=600, bbox_inches='tight') 
-                                        data_file = datafile + "_.png"
-                                        plt.figure(2)
-                                        plt.plot(avg_volt, avg_curr)
-                                        plt.xlabel('potential (V)')
-                                        plt.ylabel('current (uA)')
-                                        plt.grid('on')
-                                        plt.savefig(data_file,dpi=600, bbox_inches='tight') 
-                                        #plt.show()
-
-                        #               messagebox.showinfo("Success", "Test completed and data saved.")
-                                        end_time = time.time()
-                                        print(end_time) 
-                                        print(start_time) 
-                                        sleep_time = 120 - (end_time -start_time) 
-                                        # to block sleeping on the last iteration
-                                        if( i != 5):
-                                            time.sleep(sleep_time) 
+																				# Save Data to a CSV file 
+																				csv_filename = datafile + ".csv"
+																				np.savetxt(csv_filename, csv_data, delimiter=",",header="time,volts,current,minutes_in_buffer",comments="",fmt="%f")
 
 
+																				data_file = datafile + ".png"
+
+																				# Plot averaged results
+																				plt.figure(1)
+																				plt.subplot(211)
+																				plt.plot(avg_t, avg_volt)
+																				plt.ylabel('potential (V)')
+																				plt.grid('on')
+
+																				plt.subplot(212)
+																				plt.plot(avg_t, avg_curr)
+																				plt.ylabel('current (uA)')
+																				plt.xlabel('time (sec)')
+																				plt.grid('on')
+				
+
+																				plt.savefig(data_file,dpi=600, bbox_inches='tight') 
+																				data_file = datafile + "_.png"
+																				plt.figure(2)
+																				plt.plot(avg_volt, avg_curr)
+																				plt.xlabel('potential (V)')
+																				plt.ylabel('current (uA)')
+																				plt.grid('on')
+																				plt.savefig(data_file,dpi=600, bbox_inches='tight') 
+																				#plt.show()
+
+												#								messagebox.showinfo("Success", "Test completed and data saved.")
+																				end_time = time.time()
+																				print(end_time) 
+																				print(start_time) 
+																				sleep_time = 120 - (end_time -start_time) 
+																				# to block sleeping on the last iteration
+																				if( i != 5):
+																						time.sleep(sleep_time) 
 
 
-                except Exception as e:
-                                messagebox.showerror("Error", f"An error occurred: {e}")
-                                end_time = time.time() 
-                                #2 minute intervals
-                                # Create the main tkinter window
+
+
+								except Exception as e:
+																messagebox.showerror("Error", f"An error occurred: {e}")
+																end_time = time.time() 
+																#2 minute intervals
+																# Create the main tkinter window
 root = tk.Tk()
 root.title("Rodeostat Square Wave Voltammetry")
 
 # Default parameters 
 default_params = {
-                'port': '/dev/ttyACM0',
-                'curr_range': '100uA',
-                'sample_rate': 100.0,
-                'quietValue': 0,
-                'qietTime': 0,
-                'amplitde': 0.025,
-                'startValue': -0.6,
-                'finalValue': 0,
-                'stepValue': 0.001,
-                'window': 0.1,
-                'avg_amount': 1,
-                'electrode':0,  
-    'test_num':0, 
-                'test_type': 'buffer', 
-                'minutes_in_buffer': 0.0
+								'port': '/dev/ttyACM0',
+								'curr_range': '100uA',
+								'sample_rate': 100.0,
+								'quietValue': 0,
+								'qietTime': 0,
+								'amplitde': 0.025,
+								'startValue': -0.6,
+								'finalValue': 0,
+								'stepValue': 0.001,
+								'window': 0.1,
+								'avg_amount': 1,
+								'electrode':0,	
+		'test_num':0, 
+								'test_type': 'buffer', 
+								'minutes_in_buffer': 0.0
 }
 
 
