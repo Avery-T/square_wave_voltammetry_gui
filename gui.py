@@ -6,13 +6,15 @@ from potentiostat import Potentiostat
 import matplotlib.pyplot as plt
 import numpy as np
 from helper_code import folders 
+from helper_code import plot
 
 Test_Number = 0 
 os.chdir("./data")
 #start by creating month day folder 
-Top_Dir = folders.create_month_day_folder()
-os.chdir(Top_Dir) 
+curr_month_day_folder = folders.create_month_day_folder()
+os.chdir(curr_month_day_folder) 
 Top_Dir = os.getcwd()
+
 def run_test():
 								global Top_Dir
 								global Test_Number
@@ -240,6 +242,9 @@ average_entry = tk.Entry(root, width=30)
 average_entry.insert(0, default_params['avg_amount'])
 entries['Average Amount'] = average_entry
 
+plot_entry = tk.Entry(root, width=30)
+plot_entry.insert(20, default_params['avg_amount'])
+
 
 # Arrange fields in the window
 
@@ -292,11 +297,20 @@ average_entry.grid(row=14, column=1, padx=5, pady=5)
 run_button = tk.Button(root, text="Run Test", command=run_test)
 run_button.grid(row=15, column=0, columnspan=2, pady=10)
 
-# Start the Tkinter event loop
-root.mainloop()
+# Run button
+plot_button = tk.Button(root, text="Plot a Days Data", command=lambda: plot.plot_data(plot_entry.get()))
+plot_button.grid(row=16, column=1, columnspan=2, pady=10)
+
+# Entry widget
+plot_entry = tk.Entry(root, width=30)
+plot_entry.insert(0, curr_month_day_folder[2:])  # removed the ./ to make it easier to understand for users 
+plot_entry.grid(row=16, column=0, padx=10, pady=10)  # Position it next to the button
 
 
 # Start the Tkinter event loop
 root.mainloop()
 
+
+# Start the Tkinter event loop
+root.mainloop()
 
