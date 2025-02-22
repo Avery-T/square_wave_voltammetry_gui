@@ -171,7 +171,7 @@ default_params = {
 								'startValue': -0.6,
 								'finalValue': 0,
 								'stepValue': 0.001,
-								'window': 0.1,
+								'window': 0.05,
 								'avg_amount': 1,
 								'electrode':0,	
 		'test_num':0, 
