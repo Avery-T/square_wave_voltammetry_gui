@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from helper_code import folders 
 from helper_code import plot
-
 Test_Number = 0 
 os.chdir("./data")
 #start by creating month day folder 

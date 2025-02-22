@@ -19,7 +19,8 @@ def plot_data(main_folder):
 				electrode_folders = [f.path for f in os.scandir("./") if f.is_dir()]
 				for electrode_folder in electrode_folders:
 								print(electrode_folder) 
-								test_set_folders = [f.path for f in os.scandir("./" + electrode_folder)]
+								test_set_folders = [f.path for f in os.scandir("./" + electrode_folder) if f.is_dir()]
+								print(test_set_folders)
 								# Loop through each subfolder
 								for test_set in test_set_folders:
 										# Create a new figure for each subfolder
@@ -70,7 +71,7 @@ def plot_data(main_folder):
 
 										# Adjust layout and save the plot
 										plt.tight_layout()
-										plt.savefig(f"{test_set}.png")
+										plt.savefig(f"{test_set}")
 										# plt.close()  # Close the figure to free up memory
 										plt.show(block=False)
 
