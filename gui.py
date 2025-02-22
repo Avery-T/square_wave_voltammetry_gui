@@ -128,21 +128,23 @@ def run_test():
 																				plt.grid('on')
 				
 
-																				plt.savefig(data_file,dpi=600, bbox_inches='tight') 
+																				plt.savefig(data_file,dpi=600, bbox_inches='tight')
+																				plt.clf()
 																				data_file = datafile + "_.png"
 																				plt.figure(2)
 																				plt.plot(avg_volt, avg_curr)
 																				plt.xlabel('potential (V)')
 																				plt.ylabel('current (uA)')
 																				plt.grid('on')
-																				plt.savefig(data_file,dpi=600, bbox_inches='tight') 
+																				plt.savefig(data_file,dpi=600, bbox_inches='tight')
+																				plt.clf()
 																				#plt.show()
 
 												#								messagebox.showinfo("Success", "Test completed and data saved.")
 																				end_time = time.time()
 																				print(end_time) 
 																				print(start_time) 
-																				sleep_time = 120 - (end_time -start_time) 
+																				sleep_time = 12 - (end_time -start_time) 
 																				# to block sleeping on the last iteration
 																				if( i != 5):
 																						time.sleep(sleep_time) 
