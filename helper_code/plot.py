@@ -4,6 +4,7 @@ import glob
 import numpy as np
 from scipy.signal import medfilt
 import os
+import random
 
 window_size = 10
 filter_choice = "moving_average"
@@ -76,7 +77,8 @@ def plot_data(main_folder):
 
 								print("Plots have been saved in their respective subfolders.")
 
-
+def random_color():
+    return (random.random(), random.random(), random.random())
 def plot_peak_value(main_folder):
 				print("plotting peak data")
 				os.chdir("../" + main_folder)
@@ -87,17 +89,23 @@ def plot_peak_value(main_folder):
 				for electrode_folder in electrode_folders:
 								
 								test_set_folders = [f.path for f in os.scandir("./" + electrode_folder) if f.is_dir()]
+								
 								# Loop through each subfolder
 								for test_set in test_set_folders:
+                                    
+                                        
 										# Create a new figure for each subfolder
-										plt.figure(figsize=(10, 6))
+										test_number = 0
+										plt.figure(figsize=(19, 10))
 
 										# Get a list of all CSV files in the subfolder
 										csv_files = glob.glob(f"{test_set}/*.csv")
 
 										# Loop through each CSV file in the subfolder
 										for file in csv_files:
+                                            
 												# Read the CSV file
+												test_number += 1
 												data = pd.read_csv(file)
 
 												# Extract the columns
@@ -106,6 +114,7 @@ def plot_peak_value(main_folder):
 												label = data['minutes_in_buffer'].iloc[0]  # Get the first row of the time_buffer column
 
 												mask = (v >= -0.5) & (v <= 0)
+												print(label)
 												# Get the maximum current in this range
 												max_current = np.max(c[mask])
 												print("Maximum current in range -0.5V to 0V:", max_current)
@@ -114,15 +123,17 @@ def plot_peak_value(main_folder):
 												max_voltage = v[mask][max_index]
 												print("Voltage at max current:", max_voltage)
 												#plt.plot(max_voltage, max_current, label=f"{label}")
-												plt.scatter(max_voltage, max_current, color='red', marker='o', s=100, label=f"{label} min")
+												colors = np.random.rand(10)
+												print(test_number)
+												plt.scatter(label, max_current, color=random_color(), marker='o', s=100)
 
 												
 
 										# Add labels, title, and legend
-										plt.xlabel("V (Voltage)")
+										plt.xlabel("Minutes")
 										plt.ylabel("uA (Current)")
-										plt.title(f"{os.path.basename(test_set)} - Peak Current between -.5-0 volts")
-										plt.legend()
+										plt.title(f"{os.path.basename(test_set)} - Peak Current")
+										
 
 										# Customize grid with 0.1 intervals for both x and y axes
 										plt.grid(True)
