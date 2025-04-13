@@ -6,14 +6,17 @@ from scipy.signal import medfilt
 import os
 import random
 
-window_size = 10
+
 filter_choice = "moving_average"
 
 def moving_average(data, window_size):
 		return np.convolve(data, np.ones(window_size), 'valid') / window_size
 
-def plot_data(main_folder):
-				os.chdir("../" + main_folder)
+def plot_data(main_folder, window_size,data_dir):
+				curr = os.getcwd()
+				print(curr)
+				os.chdir(data_dir +"/"+ main_folder)
+                
 				# Path to the main folder containing subfolders
 
 				# Get a list of all electrode folders
@@ -40,17 +43,28 @@ def plot_data(main_folder):
 												label = data['minutes_in_buffer'].iloc[0]  # Get the first row of the time_buffer column
 
 												# Apply selected filter
-												if filter_choice == "median":
-														v = medfilt(v, window_size)
-														c = medfilt(c, window_size)
-												elif filter_choice == "moving_average":
-														v = moving_average(v, window_size)
-														c = moving_average(c, window_size)
-
+# 												if filter_choice == "median":
+# 														v = medfilt(v, window_size)
+# 														c = medfilt(c, window_size)
+# 												elif filter_choice == "moving_average":
+# 														v = moving_average(v, window_size)
+# 														c = moving_average(c, window_size)
+												if(window_size > 1):
+													print("moving avg enabled")
+													print("window size " + str(window_size))
+													v = moving_average(v,window_size)
+													c = moving_average(c,window_size)
+												
 												# Remove negative values from current (y-axis)
 												valid_data = c >= 0
+												
 												v = v[valid_data]
 												c = c[valid_data]
+												mask = c < 10
+												
+												v = v[mask] 
+												c= c[mask]
+                                                    
 
 												# Plot C vs V if there are remaining valid data points
 												if len(v) > 0:
@@ -66,8 +80,8 @@ def plot_data(main_folder):
 										plt.grid(True)
 
 										# Set the grid line intervals
-										plt.gca().xaxis.set_major_locator(plt.MultipleLocator(0.1))  # For x-axis gridlines at .1 intervals
-										plt.gca().yaxis.set_major_locator(plt.MultipleLocator(0.1))  # For y-axis gridlines at .1 intervals
+										plt.gca().xaxis.set_major_locator(plt.MultipleLocator(0.2))  # For x-axis gridlines at .1 intervals
+										plt.gca().yaxis.set_major_locator(plt.MultipleLocator(0.2))  # For y-axis gridlines at .1 intervals
 
 										# Adjust layout and save the plot
 										plt.tight_layout()
@@ -79,9 +93,12 @@ def plot_data(main_folder):
 
 def random_color():
     return (random.random(), random.random(), random.random())
-def plot_peak_value(main_folder):
+def plot_peak_value(main_folder,window_size,data_dir):
 				print("plotting peak data")
-				os.chdir("../" + main_folder)
+				os.chdir(data_dir +"/" + main_folder)
+				curr = os.getcwd()
+				print(curr)
+				
 				# Path to the main folder containing subfolders
 
 				# Get a list of all electrode folders
@@ -111,6 +128,12 @@ def plot_peak_value(main_folder):
 												# Extract the columns
 												v = data['volts']
 												c = data['current']
+												if(window_size > 1):
+													print("moving avg enabled")
+													print("window size " + str(window_size))
+													v = moving_average(v,window_size)
+													c = moving_average(c,window_size)
+													
 												label = data['minutes_in_buffer'].iloc[0]  # Get the first row of the time_buffer column
 
 												mask = (v >= -0.5) & (v <= 0)

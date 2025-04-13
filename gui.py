@@ -9,6 +9,7 @@ from helper_code import folders
 from helper_code import plot
 Test_Number = 0 
 os.chdir("./data")
+Data_Dir = os.getcwd()
 #start by creating month day folder 
 curr_month_day_folder = folders.create_month_day_folder()
 os.chdir(curr_month_day_folder) 
@@ -55,8 +56,11 @@ def run_test():
 			test_type = str(test_type_entry.get())
 			save_data_dir = folders.create_new_test_set_folder(test_type) 
 			os.chdir(save_data_dir)		
-			
-			for  i in range(6): 
+			# TODO - add error checking for number_of_tests_entry.get()
+			secs_between_tests = int(seconds_between_tests_entry.get())
+			number_of_tests_to_run = int(number_of_tests_entry.get())
+			prev_time_in_buffer = 0
+			for  i in range(number_of_tests_to_run):
 				print(i) 
 				start_time = time.time() 
 
@@ -97,15 +101,21 @@ def run_test():
 				avg_curr = np.mean(all_curr, axis=0)
 
 				#get the time in buffer 
-				minutes_in_buffer =  float(minutes_in_buffer_entry.get())
+				seconds_in_buffer =  int(seconds_between_tests_entry.get())
 				# create array with the same size 
 
-				minutes_in_buffer_array = np.zeros_like(avg_t) 
+				seconds_in_buffer_array = np.zeros_like(avg_t)
+				end_time = time.time() #neeed to get the end time 
+                # its always in minutes to keep the same format as the other data //this may need to change to keep it in seconds
+				if(i == 0):
+					seconds_in_buffer_array[0] = 0
+                
+				else:#increases the percision. it takes some amount of time to execute the code above
+					seconds_in_buffer_array[0] = (prev_time_in_buffer + (abs((seconds_in_buffer + (end_time -start_time))))/60)
+				prev_time_in_buffer = seconds_in_buffer_array[0]
+				print(prev_time_in_buffer) 
 
-				minutes_in_buffer_array[0] = i * 2
-				print(minutes_in_buffer_array[0])
-
-				csv_data = np.column_stack((avg_t,avg_volt,avg_curr,minutes_in_buffer_array)) 
+				csv_data = np.column_stack((avg_t,avg_volt,avg_curr,seconds_in_buffer_array)) 
 
 				# Save Data to a CSV file 
 				csv_filename = datafile + ".csv"
@@ -140,13 +150,15 @@ def run_test():
 				plt.clf()
 				#plt.show()
 
-#								messagebox.showinfo("Success", "Test completed and data saved.")
+				#messagebox.showinfo("Success", "Test completed and data saved.")
 				end_time = time.time()
 				print(end_time) 
-				print(start_time) 
-				sleep_time = 12 - (end_time -start_time) 
+				print(start_time)
+				if (secs_between_tests):
+					sleep_time = secs_between_tests - (end_time -start_time) 
 				# to block sleeping on the last iteration
-				if( i != 5):
+					last_test = number_of_tests_to_run - 1 
+					if( i != last_test):
 						time.sleep(sleep_time) 
 
 
@@ -176,7 +188,10 @@ default_params = {
 'electrode':0,	
 'test_num':0, 
 'test_type': 'buffer', 
-'minutes_in_buffer': 0.0
+'minutes_in_buffer': 0.0,
+'number_of_tests':6,
+'seconds_between_tests':120,
+'ma_filter_points': 10
 }
 
 
@@ -203,9 +218,6 @@ test_type_entry = tk.Entry(root, width=30)
 test_type_entry.insert(0, default_params['test_type'])
 entries['Test Type'] = test_type_entry 
 
-minutes_in_buffer_entry = tk.Entry(root, width=30)
-minutes_in_buffer_entry.insert(0, default_params['minutes_in_buffer'])
-entries['Minutes In Buffer'] = minutes_in_buffer_entry 
 
 sample_rate_entry = tk.Entry(root, width=30)
 sample_rate_entry.insert(0, default_params['sample_rate'])
@@ -243,6 +255,18 @@ average_entry = tk.Entry(root, width=30)
 average_entry.insert(0, default_params['avg_amount'])
 entries['Average Amount'] = average_entry
 
+number_of_tests_entry = tk.Entry(root, width=30)
+number_of_tests_entry.insert(0, default_params['number_of_tests'])
+entries['Number Of Tests'] = number_of_tests_entry
+
+seconds_between_tests_entry = tk.Entry(root, width=30)
+seconds_between_tests_entry.insert(0, default_params['seconds_between_tests'])
+entries['Seconds Between Tests'] = seconds_between_tests_entry
+
+ma_filter_points_entry = tk.Entry(root, width=10)
+ma_filter_points_entry.insert(0, default_params['ma_filter_points'])
+entries['Ma Filter Points'] = ma_filter_points_entry
+
 plot_entry = tk.Entry(root, width=30)
 plot_entry.insert(20, default_params['avg_amount'])
 
@@ -264,8 +288,6 @@ test_num_entry.grid(row=3, column=1, padx=5, pady=5)
 tk.Label(root, text="Test Type").grid(row=4, column=0, padx=5, pady=5)
 test_type_entry.grid(row=4, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Minutes In Buffer").grid(row=5, column=0, padx=5, pady=5)
-minutes_in_buffer_entry.grid(row=5, column=1, padx=5, pady=5)
 
 tk.Label(root, text="Sample Rate").grid(row=6, column=0, padx=5, pady=5)
 sample_rate_entry.grid(row=6, column=1, padx=5, pady=5)
@@ -291,25 +313,48 @@ step_value_entry.grid(row=12, column=1, padx=5, pady=5)
 tk.Label(root, text="Window").grid(row=13, column=0, padx=5, pady=5)
 window_entry.grid(row=13, column=1, padx=5, pady=5)
 
-tk.Label(root, text="Averaging Amount").grid(row=14, column=0, padx=5, pady=5)
-average_entry.grid(row=14, column=1, padx=5, pady=5)
+# tk.Label(root, text="Averaging Amount").grid(row=14, column=0, padx=5, pady=5)
+# average_entry.grid(row=14, column=1, padx=5, pady=5)
 
-# Run button
+
+# # number of tests
+tk.Label(root, text="Number Of Tests").grid(row=14, column=0, padx=5, pady=5)
+number_of_tests_entry.grid(row=14, column=1, padx=5, pady=5)
+
+# Time Between Tests 
+tk.Label(root, text="Seconds Between Tests").grid(row=15, column=0, padx=5, pady=5)
+seconds_between_tests_entry.grid(row=15, column=1, padx=5, pady=5)
+
+tk.Label(root, text="Enter the Folder containing the data to plot").grid(row=1, column=2, columnspan=2, pady=10)
+tk.Label(root, text="Moving Avg Window Size").grid(row=3, column=2, pady=0)
+ma_filter_points_entry.grid(row=3, column=3, padx=0, pady=0)
+
+# ma_filter_enable = tk.IntVar()
+# ma_filter_check_button = tk.Checkbutton(root, text="Enable Moving Average Filter on Data", variable=ma_filter_enable)
+# ma_filter_check_button.grid(row=3, column=2, padx=5, pady=5)
+
 run_button = tk.Button(root, text="Run Test", command=run_test)
-run_button.grid(row=15, column=0, columnspan=2, pady=10)
+run_button.grid(row=16, column=1, columnspan=1, pady=10)
 
-# Run button
-plot_button = tk.Button(root, text="Plot a Days Data", command=lambda: plot.plot_data(plot_entry.get()))
-plot_button.grid(row=16, column=1, columnspan=2, pady=10)
+plot_folder = plot_entry.get()
+moving_avg_window_size = int(ma_filter_points_entry.get())
+print(" moving avg window" + str(moving_avg_window_size))
+
+
+plot_button = tk.Button(root, text="Plot a Days Data", command=lambda: plot.plot_data(plot_entry.get(),int(ma_filter_points_entry.get()),Data_Dir))
+plot_button.grid(row=6, column=2, columnspan=1, pady=10)
+
+
 
 # Entry widget
 plot_entry = tk.Entry(root, width=30)
 plot_entry.insert(0, curr_month_day_folder[2:])  # removed the ./ to make it easier to understand for users 
-plot_entry.grid(row=16, column=0, padx=10, pady=10)  # Position it next to the button
+plot_entry.grid(row=2, column=2, padx=10, pady=10)  # Position it next to the button
 
 # Run button
-plot_max_current = tk.Button(root, text="Plot peak current", command=lambda: plot.plot_peak_value(plot_entry.get()))
-plot_max_current.grid(row=17, column=1, columnspan=2, pady=10)
+plot_max_current = tk.Button(root, text="Plot peak current", command=lambda: plot.plot_peak_value(plot_entry.get(),int(ma_filter_points_entry.get()),Data_Dir))
+plot_max_current.grid(row=7, column=2, columnspan=1, pady=10)
+
 # Start the Tkinter event loop
 root.mainloop()
 
